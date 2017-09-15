@@ -1,0 +1,8 @@
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Newtonsoft.Json.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Owin.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Microsoft.Owin.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Microsoft.Owin.Security.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Microsoft.AspNet.SignalR.Core.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Microsoft.Owin.Host.SystemWeb.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollectorServer/bin/Debug/Microsoft.AspNet.SignalR.SystemWeb.dll

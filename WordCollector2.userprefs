@@ -1,0 +1,29 @@
+﻿<Properties StartupItem="WordCollector2/WordCollector2.csproj" RefactoringSettings.EnableRefactorings="True">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="WordCollector2/MenuScene.cs">
+    <Files>
+      <File FileName="WordCollector2/Game1.cs" Line="94" Column="50" />
+      <File FileName="WordCollectorServer/Program.cs" Line="1" Column="1" />
+      <File FileName="packages/Microsoft.AspNet.SignalR.2.2.2/readme.txt" Line="1" Column="1" />
+      <File FileName="WordCollectorServer/Startup.cs" Line="13" Column="17" />
+      <File FileName="WordCollectorServer/User.cs" Line="1" Column="1" />
+      <File FileName="WordCollectorServer/GlobalHub.cs" Line="1" Column="1" />
+      <File FileName="WordCollector2/MenuScene.cs" Line="53" Column="1" />
+      <File FileName="WordCollector2/GameScene.cs" Line="62" Column="21" />
+      <File FileName="WordCollector2/app.config" Line="11" Column="17" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="/home/cheshir/Documents/GameDev/WordCollectorServer/WordCollectorServer/WordCollectorServer/Program.cs" line="65" column="36" />
+      <Breakpoint file="/home/cheshir/Documents/GameDev/Nez/Nez.Portable/PipelineRuntime/BitmapFonts/BitmapFont.cs" line="44" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <DisabledProjects>
+    <String>../TCC.Utils/TCC.Utils.csproj</String>
+    <String>../WordCollectorServer/WordCollectorServer/WordCollectorServer/WordCollectorServer.csproj</String>
+    <String>../Nez/Nez.Portable/Nez.csproj</String>
+    <String>../Nez/Nez.PipelineImporter/Nez.PipelineImporter.csproj</String>
+  </DisabledProjects>
+</Properties>
