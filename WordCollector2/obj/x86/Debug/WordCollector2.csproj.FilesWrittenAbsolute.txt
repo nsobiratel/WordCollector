@@ -21,3 +21,6 @@
 /home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/MonoGame.Extended.Gui.dll
 /home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/MonoGame.Extended.NuclexGui.dll
 /home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/Microsoft.AspNet.SignalR.Client.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/SignalR.Client.TypedHubProxy.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/Contracts.dll
+/home/cheshir/Documents/GameDev/WordCollector2/WordCollector2/bin/Debug/Contracts.pdb

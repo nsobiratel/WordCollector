@@ -2,6 +2,7 @@
 using Microsoft.Owin;
 using WordCollectorServer;
 using Owin;
+using Microsoft.Owin.Cors;
 
 [assembly:OwinStartupAttribute(typeof(Startup))]
 namespace WordCollectorServer
@@ -10,6 +11,7 @@ namespace WordCollectorServer
     {
         public void Configuration(IAppBuilder app)
         {
+            app.UseCors(CorsOptions.AllowAll);
             app.MapSignalR();
         }
     }

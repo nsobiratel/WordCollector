@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordCollector2", "WordColle
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordCollectorServer", "WordCollectorServer\WordCollectorServer.csproj", "{0F62376A-F964-4EA0-BE4D-DEADA8088EBE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Contracts.csproj", "{1400D50F-73DA-47A1-AE3F-A029B7132E74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -15,6 +17,10 @@ Global
 		{0F62376A-F964-4EA0-BE4D-DEADA8088EBE}.Debug|x86.Build.0 = Debug|x86
 		{0F62376A-F964-4EA0-BE4D-DEADA8088EBE}.Release|x86.ActiveCfg = Release|x86
 		{0F62376A-F964-4EA0-BE4D-DEADA8088EBE}.Release|x86.Build.0 = Release|x86
+		{1400D50F-73DA-47A1-AE3F-A029B7132E74}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1400D50F-73DA-47A1-AE3F-A029B7132E74}.Debug|x86.Build.0 = Debug|Any CPU
+		{1400D50F-73DA-47A1-AE3F-A029B7132E74}.Release|x86.ActiveCfg = Release|Any CPU
+		{1400D50F-73DA-47A1-AE3F-A029B7132E74}.Release|x86.Build.0 = Release|Any CPU
 		{9218EB33-0AF3-46A9-838E-2A71EA106B69}.Debug|x86.ActiveCfg = Debug|x86
 		{9218EB33-0AF3-46A9-838E-2A71EA106B69}.Debug|x86.Build.0 = Debug|x86
 		{9218EB33-0AF3-46A9-838E-2A71EA106B69}.Release|x86.ActiveCfg = Release|x86

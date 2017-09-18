@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.NuclexGui;
+using Contracts;
 
 namespace WordCollector2
 {
@@ -26,7 +27,7 @@ namespace WordCollector2
         private Color _backgroundColor;
 
         private HubConnection _connection;
-        private IHubProxy _proxy;
+        private IHubProxy<IServerContract, IClientContract> _proxy;
 
         private MenuScene _menuWindow;
         private GameScene _gameWindow;
@@ -62,9 +63,10 @@ namespace WordCollector2
                 new BoxingViewportAdapter(this.Window, this.GraphicsDevice, 800, 480);
             this._camera = new Camera2D(viewportAdapter);*/
 
-            this._connection = new HubConnection("127.0.0.1");
-            this._proxy = this._connection.CreateHubProxy("GlobalHub");
-            //this._proxy.
+            this._connection = new HubConnection("http://localhost:8080/signalr");
+            this._proxy = this._connection.CreateHubProxy("GlobalHub")
+                .AsHubProxy<IServerContract, IClientContract>();
+            //this._proxy.SubscribeOn(p => p.
         }
 
         void Window_ClientSizeChanged(object sender, EventArgs e)
@@ -93,6 +95,10 @@ namespace WordCollector2
             this._menuWindow.BtnStart.Pressed += _menuWindow_BtnStart_Pressed;
             this._gui.Screen.Desktop.Children.Add(this._menuWindow);
 
+            MessageScene msg = new MessageScene("fadggsgfsdhfdhdfhjsgjsjksksgkgksfkgg4234235623664");
+            this._gui.Screen.Desktop.Children.Add(msg);
+            msg.BringToFront();
+
             Task.Run(async () => await this._connection.Start());
         }
 
@@ -103,6 +109,9 @@ namespace WordCollector2
             this._inputService.KeyboardListener.KeyTyped += 
                 (s, args) => this._gameWindow.OnKeyTyped(args);
             this._gui.Screen.Desktop.Children.Add(this._gameWindow);
+
+            this._proxy.Call(s => s.Connect(this._menuWindow.TbNickName.Text));
+            this._proxy.Call(s => s.CreateNewGame());
         }
 
         /// <summary>
@@ -139,10 +148,10 @@ namespace WordCollector2
                 Exit();
             #endif
 
-            if (this._gameWindow != null)
+            /*if (this._gameWindow != null)
                 this._gameWindow.BringToFront();
             else
-                this._menuWindow.BringToFront();
+                this._menuWindow.BringToFront();*/
 
             // TODO: Add your update logic here
             // Update both InputManager (which updates states of each device) and GUI
