@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.NuclexGui;
 using MonoGame.Extended.NuclexGui.Controls.Desktop;
+using MonoGame.Extended.NuclexGui.Controls;
 
 namespace WordCollector2
 {
@@ -14,10 +15,10 @@ namespace WordCollector2
 
         GuiListControl ListMessages { get; }
 
-        private int _lastProcessedLength = 0;
-        private bool _backspaceAlreadyApplied = false;
+        int _lastProcessedLength = 1;
+        bool _backspaceAlreadyApplied;
 
-        public GameScene()
+        public GameScene(string gameId, char startChar)
         {
             this.Bounds = new UniRectangle(
                 new UniScalar(0f, 0),
@@ -25,7 +26,7 @@ namespace WordCollector2
                 new UniScalar(1f, 0),
                 new UniScalar(1f, 0));
             this.EnableDragging = false;
-            this.Title = "Игра";
+            this.Title = "Игра [" + gameId + "]";
 
             UniVector size = new UniVector(
                                  new UniScalar(0.8f, 0), 
@@ -37,8 +38,9 @@ namespace WordCollector2
             this.TbWord = new GuiInputControl
             {
                 Name = "tbWord",
-                Bounds = new UniRectangle(location, size)
+                Bounds = new UniRectangle(location, size),
             };
+            this.TbWord.Text += startChar;
 
             size = new UniVector(
                 new UniScalar(0.8f, 0), 
@@ -111,8 +113,11 @@ namespace WordCollector2
             this._lastProcessedLength = this.TbWord.Text.Length;
         }
 
-        public void OnKeyTyped(KeyboardEventArgs e)
+        public void OnKeyTyped(object sender, KeyboardEventArgs e)
         {
+            if (!this.TbWord.HasFocus)
+                return;
+
             Keys key = e.Key;
 
             switch (key)

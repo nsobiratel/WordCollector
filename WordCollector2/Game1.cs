@@ -32,12 +32,15 @@ namespace WordCollector2
         private MenuScene _menuWindow;
         private GameScene _gameWindow;
 
+        private string CurrentGameId = string.Empty;
+        private string CurrentEnemyNick = string.Empty;
+
         public Game1()
         {
             // сначала наследуемые
             this.Window.AllowUserResizing = true;
             this.Window.AllowAltF4 = true;
-            this.Window.ClientSizeChanged += Window_ClientSizeChanged;
+            this.Window.ClientSizeChanged += this.Window_ClientSizeChanged;
             this.IsMouseVisible = true;
             this.Content.RootDirectory = "Content";
 
@@ -52,7 +55,7 @@ namespace WordCollector2
 
             // Create a GUI screen and attach it as a default to GuiManager.
             // That screen will also act as a root parent for every other control that we create.
-            this._gui.Screen = new GuiScreen(800, 480);
+            this._gui.Screen = new GuiScreen(320, 240);
             this._gui.Screen.Desktop.Bounds = new UniRectangle(
                 new UniScalar(0f, 0), 
                 new UniScalar(0f, 0), 
@@ -64,9 +67,38 @@ namespace WordCollector2
             this._camera = new Camera2D(viewportAdapter);*/
 
             this._connection = new HubConnection("http://localhost:8080/signalr");
+            this._connection.DeadlockErrorTimeout = TimeSpan.FromMinutes(10);
+            this._connection.TransportConnectTimeout = TimeSpan.FromMinutes(10);
+
             this._proxy = this._connection.CreateHubProxy("GlobalHub")
                 .AsHubProxy<IServerContract, IClientContract>();
-            //this._proxy.SubscribeOn(p => p.
+            this._proxy.SubscribeOn<string>(
+                c => c.OnShowMessage, 
+                s =>
+                {
+                    MessageScene msg = new MessageScene();
+                    msg.SetText(s);
+                    this._gui.Screen.Desktop.Children.Add(msg);
+                    msg.BringToFront();
+                });
+
+            this._proxy.SubscribeOn<char>(
+                c => c.OnCanDoStep,
+                ch =>
+                {
+                    this._gameWindow.AddMessage("Противник добавил букву [" + ch + "]");
+                    this._gameWindow.TbWord.Text += ch;
+                    this._gameWindow.AddMessage("Ваш ход");
+                });
+
+            this._proxy.SubscribeOn<string, string, char>(
+                c => c.OnGameStarted,
+                (gameId, enemyNick, startChar) =>
+                {
+                    this.CurrentGameId = gameId;
+                    this.CurrentEnemyNick = enemyNick;
+                    this.ShowGameWindow(startChar);
+                });
         }
 
         void Window_ClientSizeChanged(object sender, EventArgs e)
@@ -93,25 +125,94 @@ namespace WordCollector2
 
             this._menuWindow = new MenuScene();
             this._menuWindow.BtnStart.Pressed += _menuWindow_BtnStart_Pressed;
+            this._menuWindow.BtnSaveNick.Pressed += (sender, e) => 
+                this._proxy.Call(s => s.Connect(this._menuWindow.TbNickName.Text));
             this._gui.Screen.Desktop.Children.Add(this._menuWindow);
+            this._gui.Screen.FocusChanged += this._menuWindow.OnFocusChanged;
+            this._menuWindow.BringToFront();
 
-            MessageScene msg = new MessageScene("fadggsgfsdhfdhdfhjsgjsjksksgkgksfkgg4234235623664");
-            this._gui.Screen.Desktop.Children.Add(msg);
-            msg.BringToFront();
-
+            //MessageScene msg = new MessageScene("fadggsgfsdhfdhdfhjsgjsjksksgkgksfkgg4234235623664");
+            //this._gui.Screen.Desktop.Children.Add(msg);
+            //msg.BringToFront();
             Task.Run(async () => await this._connection.Start());
+        }
+
+        void ShowGameWindow(char startChar)
+        {
+            this._gameWindow?.Close();
+            this._gui.Screen.Desktop.Children.Remove(this._gameWindow);
+
+            this._gameWindow = new GameScene(this.CurrentGameId, startChar);
+            this._gameWindow.AddMessage("Игра началась");
+            this._gameWindow.AddMessage("Противник : " + this.CurrentEnemyNick);
+            this._gameWindow.AddMessage("Случайная стартовая буква : [" + startChar + "]");
+            this._inputService.KeyboardListener.KeyTyped += this._gameWindow.OnKeyTyped;
+            this._gameWindow.BtnNextStep.Pressed += (control, args) =>
+            {
+                this._gameWindow.AddMessage("Вы передали ход противнику");
+                this._proxy.Call(s => s.DoStep(
+                        this.CurrentGameId, 
+                        this._gameWindow.TbWord.Text[this._gameWindow.TbWord.Text.Length - 1]));
+            };
+            this._gui.Screen.Desktop.Children.Add(this._gameWindow);
+            this._gameWindow.BringToFront();
         }
 
         void _menuWindow_BtnStart_Pressed(object sender, EventArgs e)
         {
-            this._gui.Screen.Desktop.Children.Remove(this._gameWindow);
-            this._gameWindow = new GameScene();
-            this._inputService.KeyboardListener.KeyTyped += 
-                (s, args) => this._gameWindow.OnKeyTyped(args);
-            this._gui.Screen.Desktop.Children.Add(this._gameWindow);
+            if (this._connection.State != ConnectionState.Connected)
+            {
+                MessageScene msg = new MessageScene();
+                msg.SetText("Отсутствует подключение к серверу");
+                this._gui.Screen.Desktop.Children.Add(msg);
+                msg.BringToFront();
+                return;
+            }
 
-            this._proxy.Call(s => s.Connect(this._menuWindow.TbNickName.Text));
-            this._proxy.Call(s => s.CreateNewGame());
+            if (!this._menuWindow.IsValidNick())
+            {
+                MessageScene msg = new MessageScene();
+                msg.SetText(
+                    "Имя игрока должно состоять из латинских букв и цифр и иметь длину от 3 до 100 символов");
+                this._gui.Screen.Desktop.Children.Add(msg);
+                msg.BringToFront();
+                return;
+            }
+            
+            this._gui.Screen.Desktop.Children.Remove(this._gameWindow);
+
+            Tuple<string, string, char> gameData = this._proxy.Call(s => s.CreateNewGame());
+
+            if (string.IsNullOrWhiteSpace(gameData.Item1))
+            {
+                MessageScene msg;
+                if (string.IsNullOrWhiteSpace(gameData.Item2))
+                {
+                    msg = new MessageScene();
+                    msg.SetText("На сервере нет пользователей, чтобы с вами сыграть");
+                }
+                else
+                {
+                    msg = new MessageScene();
+                    msg.SetText("Не удалось создать игру с игроком [" + gameData.Item2 + "]");
+                }
+                this._gui.Screen.Desktop.Children.Add(msg);
+                msg.BringToFront();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(gameData.Item2))
+            {
+                MessageScene msg = new MessageScene();
+                msg.SetText("Не удалось получить имя противника в игре [" + gameData.Item1 + "]");
+                this._gui.Screen.Desktop.Children.Add(msg);
+                msg.BringToFront();
+                return;
+            }
+
+            this.CurrentGameId = gameData.Item1;
+            this.CurrentEnemyNick = gameData.Item2;
+            this.ShowGameWindow(gameData.Item3);
         }
 
         /// <summary>

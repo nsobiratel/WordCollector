@@ -14,6 +14,7 @@ namespace WordCollectorServer
             string url = "http://localhost:8080";
             using (WebApp.Start(url))
             {
+                //Game g = new Game(null, null);
                 Console.WriteLine("Server running on {0}", url);
                 Console.ReadLine();
             }

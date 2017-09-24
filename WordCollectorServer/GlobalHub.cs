@@ -2,14 +2,16 @@
 using Microsoft.AspNet.SignalR;
 using System.Collections.Generic;
 using Contracts;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace WordCollectorServer
 {
     public class GlobalHub : Hub<IClientContract>, IServerContract
     {
-        List<User> Users = new List<User>();
-        Dictionary<string, Game> Games = new Dictionary<string, Game>();
-        Random rnd = new Random(DateTime.Now.Millisecond);
+        static List<User> Users = new List<User>();
+        static Dictionary<string, Game> Games = new Dictionary<string, Game>();
+        static Random rnd = new Random(DateTime.Now.Millisecond);
 
         // Подключение нового пользователя
         public void Connect(string userName)
@@ -17,14 +19,14 @@ namespace WordCollectorServer
             string id = this.Context.ConnectionId;
 
             User user = 
-                this.Users.Find(u => string.Equals(
+                Users.Find(u => string.Equals(
                         u.Name, userName, 
                         StringComparison.OrdinalIgnoreCase));
 
             if (user == null)
             {
                 user = new User{ Name = userName, ConnectionId = id };
-                this.Users.Add(user);
+                Users.Add(user);
 
                 // Посылаем сообщение текущему пользователю
                 //this.Clients.Caller.OnConnected(id, userName);
@@ -41,43 +43,72 @@ namespace WordCollectorServer
             }
         }
 
-        /*// Отключение пользователя
+        // Отключение пользователя
         public override Task OnDisconnected(bool stopCalled)
         {
             User user = 
-                this.Users.FirstOrDefault(
+                Users.FirstOrDefault(
                     x => x.ConnectionId == Context.ConnectionId);
             if (user != null)
             {
-                this.Users.Remove(user);
-                Clients.All.onUserDisconnected(
-                    user.ConnectionId, user.Name);
+                Users.Remove(user);
+                Game game;
+                if (Games.TryGetValue(user.CurrentGameId, out game))
+                {
+                    Clients.Group(user.CurrentGameId).OnGameFinished(
+                        game.GetEnemyForUser(user).Name, 
+                        "Техническая победа - противник отключился от сервера");
+                    game.Finish();
+                    Games.Remove(user.CurrentGameId);
+                }
             }
 
             return base.OnDisconnected(stopCalled);
-        }*/
-
-        public Tuple<string, string> CreateNewGame()
-        {
-            User firstUser = 
-                this.Users.Find(u => u.ConnectionId == this.Context.ConnectionId);
-            User secondUser = null;
-            while (firstUser == secondUser || secondUser == null)
-            {
-                int rndUserIndex = rnd.Next(this.Users.Count);
-                secondUser = this.Users[rndUserIndex];
-            }
-
-            Game game = new Game(firstUser, secondUser);
-            this.Games.Add(game.Id, game);
-
-            return new Tuple<string, string>(game.Id, secondUser.Name);
         }
 
-        public void DoStep(string word)
+        public Tuple<string, string, char> CreateNewGame()
         {
-            throw new NotImplementedException();
+            User firstUser = Users.Find(u => u.ConnectionId == this.Context.ConnectionId);
+            User secondUser = null;
+
+            if (Users.Count > 1)
+            {
+                while (firstUser == secondUser || secondUser == null)
+                {
+                    int rndUserIndex = rnd.Next(Users.Count);
+                    secondUser = Users[rndUserIndex];
+                }
+            }
+            else
+            {
+                return new Tuple<string, string, char>(string.Empty, string.Empty, char.MinValue);
+            }
+
+            Game game = new Game(firstUser, secondUser, rnd.Next(34));
+            Games.Add(game.Id, game);
+
+            Task.Run(async () => await this.Groups.Add(firstUser.ConnectionId, game.Id));
+            Task.Run(async () => await this.Groups.Add(secondUser.ConnectionId, game.Id));
+
+            Clients.Client(secondUser.ConnectionId).OnGameStarted(
+                game.Id, firstUser.Name, game.currentChar.Symbol);
+
+            return new Tuple<string, string, char>(game.Id, secondUser.Name, game.currentChar.Symbol);
+        }
+
+        public void DoStep(string gameId, char lastChar)
+        {
+            Game game;
+            if (!Games.TryGetValue(gameId, out game))
+            {
+                Clients.Caller.OnShowMessage("Игра с ид [" + gameId + "] не найдена на сервере");
+                return;
+            }
+
+            if (game.ValidateStep(lastChar))
+                this.Clients.OthersInGroup(gameId).OnCanDoStep(lastChar);
+            /*else
+               Clients.Caller.OnInvalidWord (word)*/
         }
     }
 }
-

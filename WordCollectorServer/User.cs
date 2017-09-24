@@ -7,6 +7,8 @@ namespace WordCollectorServer
         public string ConnectionId { get; set; }
 
         public string Name { get; set; }
+
+        public string CurrentGameId { get; set; }
     }
 }
 

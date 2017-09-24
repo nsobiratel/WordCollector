@@ -10,7 +10,7 @@ namespace WordCollector2
         GuiButtonControl BtnOk;
         GuiLabelControl LbText;
 
-        public MessageScene(string msg)
+        public MessageScene()
         {
             this.Bounds = new UniRectangle(
                 new UniScalar(0.1f, 0),
@@ -23,7 +23,7 @@ namespace WordCollector2
             UniVector size = 
                 new UniVector(
                     new UniScalar(0.8f, 0), 
-                    new UniScalar(0.7f, 0));
+                    new UniScalar(0.6f, 0));
             UniVector location = 
                 new UniVector(
                     new UniScalar(0.1f, 0),
@@ -33,7 +33,6 @@ namespace WordCollector2
             {
                 Name = "LbText",
                 Bounds = new UniRectangle(location, size),
-                Text = msg
             };
 
             size = new UniVector(
@@ -53,6 +52,11 @@ namespace WordCollector2
 
             this.Children.Add(this.LbText);
             this.Children.Add(this.BtnOk);
+        }
+
+        public void SetText(string msg)
+        {
+            this.LbText.Text = msg;
         }
     }
 }

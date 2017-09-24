@@ -75,6 +75,8 @@
     <Compile Include="User.cs" />
     <Compile Include="GlobalHub.cs" />
     <Compile Include="Game.cs" />
+    <Compile Include="DictTree.cs" />
+    <Compile Include="DictTreeNode.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -85,6 +87,9 @@
     <None Include="Scripts\jquery.signalR-2.2.2.js" />
     <None Include="Scripts\jquery.signalR-2.2.2.min.js" />
     <None Include="word_rus.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="zdf-win.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

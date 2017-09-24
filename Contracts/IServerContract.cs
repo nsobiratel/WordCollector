@@ -6,8 +6,8 @@ namespace Contracts
     {
         void Connect(string name);
 
-        Tuple<string, string> CreateNewGame();
+        Tuple<string, string, char> CreateNewGame();
 
-        void DoStep(string word);
+        void DoStep(string gameId, char lastSymbol);
     }
 }
