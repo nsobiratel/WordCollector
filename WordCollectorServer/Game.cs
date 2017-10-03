@@ -32,9 +32,11 @@ namespace WordCollectorServer
             {
                 dictionary.AddWord(word);
             }
+
+            dictionary.RemoveEmptyStartNodes();
         }
 
-        public Game(User user1, User user2, int rndChar)
+        public Game(User user1, User user2)
         {
             this.Id = Guid.NewGuid().ToString();
             this.User1 = user1;
@@ -42,7 +44,7 @@ namespace WordCollectorServer
             this.User2 = user2;
             this.User2.CurrentGameId = this.Id;
 
-            this.currentChar = dictionary.GetNode(rndChar);
+            this.currentChar = dictionary.GetNode();
         }
 
         public User GetEnemyForUser(User user)
@@ -56,14 +58,16 @@ namespace WordCollectorServer
             this.User2.CurrentGameId = string.Empty;
         }
 
-        public bool ValidateStep(char lastChar)
+        public bool? ValidateStep(char lastChar)
         {
             DictTreeNode newCharNode = this.currentChar.GetChild(lastChar);
             if (newCharNode == null)
                 return false;
 
             this.currentChar = newCharNode;
-            return true;
+            if (this.currentChar.ChildCount > 0)
+                return true;
+            return null;
         }
     }
 }

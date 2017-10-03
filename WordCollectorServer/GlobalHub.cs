@@ -4,14 +4,15 @@ using System.Collections.Generic;
 using Contracts;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace WordCollectorServer
 {
     public class GlobalHub : Hub<IClientContract>, IServerContract
     {
-        static List<User> Users = new List<User>();
-        static Dictionary<string, Game> Games = new Dictionary<string, Game>();
-        static Random rnd = new Random(DateTime.Now.Millisecond);
+        static readonly List<User> Users = new List<User>();
+        static readonly Dictionary<string, Game> Games = new Dictionary<string, Game>();
+        static readonly Random rnd = new Random();
 
         // Подключение нового пользователя
         public void Connect(string userName)
@@ -68,47 +69,69 @@ namespace WordCollectorServer
 
         public Tuple<string, string, char> CreateNewGame()
         {
-            User firstUser = Users.Find(u => u.ConnectionId == this.Context.ConnectionId);
-            User secondUser = null;
-
-            if (Users.Count > 1)
+            try
             {
-                while (firstUser == secondUser || secondUser == null)
+                User firstUser = Users.Find(u => u.ConnectionId == this.Context.ConnectionId);
+                User secondUser = null;
+
+                if (Users.Count > 1)
                 {
-                    int rndUserIndex = rnd.Next(Users.Count);
-                    secondUser = Users[rndUserIndex];
+                    while (firstUser == secondUser || secondUser == null)
+                    {
+                        int rndUserIndex = rnd.Next(Users.Count);
+                        secondUser = Users[rndUserIndex];
+                    }
                 }
+                else
+                {
+                    return new Tuple<string, string, char>(string.Empty, string.Empty, char.MinValue);
+                }
+
+                Game game = new Game(firstUser, secondUser);
+                Games.Add(game.Id, game);
+
+                Task.Run(async () => await this.Groups.Add(firstUser.ConnectionId, game.Id));
+                Task.Run(async () => await this.Groups.Add(secondUser.ConnectionId, game.Id));
+
+                Clients.Client(secondUser.ConnectionId).OnGameStarted(
+                    game.Id, firstUser.Name, game.currentChar.Symbol);
+
+                return new Tuple<string, string, char>(game.Id, secondUser.Name, game.currentChar.Symbol);
             }
-            else
+            catch (Exception exc)
             {
-                return new Tuple<string, string, char>(string.Empty, string.Empty, char.MinValue);
+                Console.WriteLine(exc);
+                return null;
             }
-
-            Game game = new Game(firstUser, secondUser, rnd.Next(34));
-            Games.Add(game.Id, game);
-
-            Task.Run(async () => await this.Groups.Add(firstUser.ConnectionId, game.Id));
-            Task.Run(async () => await this.Groups.Add(secondUser.ConnectionId, game.Id));
-
-            Clients.Client(secondUser.ConnectionId).OnGameStarted(
-                game.Id, firstUser.Name, game.currentChar.Symbol);
-
-            return new Tuple<string, string, char>(game.Id, secondUser.Name, game.currentChar.Symbol);
         }
 
-        public void DoStep(string gameId, char lastChar)
+        public bool? DoStep(string gameId, char lastChar)
         {
             Game game;
             if (!Games.TryGetValue(gameId, out game))
             {
-                Clients.Caller.OnShowMessage("Игра с ид [" + gameId + "] не найдена на сервере");
-                return;
+                this.Clients.Caller.OnShowMessage(
+                    "Игра с ид [" + gameId + "] не найдена на сервере");
+                return false;
             }
 
-            if (game.ValidateStep(lastChar))
-                this.Clients.OthersInGroup(gameId).OnCanDoStep(lastChar);
-            /*else
-               Clients.Caller.OnInvalidWord (word)*/
+            switch (game.ValidateStep(lastChar))
+            {
+                case true: 
+                    this.Clients.OthersInGroup(gameId).OnCanDoStep(lastChar);
+                    return true;
+                case false: 
+                    this.Clients.Caller.OnInvalidWord();
+                    return false;
+                default:
+                    this.Clients.Caller.OnGameFinished(
+                        "Вы выиграли", 
+                        "Закончились доступные буквы, слово собрано");
+                    this.Clients.OthersInGroup(gameId).OnGameFinished(
+                        "Вы проиграли",
+                        "Закончились доступные буквы, слово собрано");
+                    return null;
+            }
         }
     }
 }

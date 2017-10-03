@@ -55,7 +55,7 @@ namespace WordCollector2
 
             // Create a GUI screen and attach it as a default to GuiManager.
             // That screen will also act as a root parent for every other control that we create.
-            this._gui.Screen = new GuiScreen(320, 240);
+            this._gui.Screen = new GuiScreen(1280, 1024);
             this._gui.Screen.Desktop.Bounds = new UniRectangle(
                 new UniScalar(0f, 0), 
                 new UniScalar(0f, 0), 
@@ -84,12 +84,7 @@ namespace WordCollector2
 
             this._proxy.SubscribeOn<char>(
                 c => c.OnCanDoStep,
-                ch =>
-                {
-                    this._gameWindow.AddMessage("Противник добавил букву [" + ch + "]");
-                    this._gameWindow.TbWord.Text += ch;
-                    this._gameWindow.AddMessage("Ваш ход");
-                });
+                ch => this._gameWindow.AddNewChar(ch));
 
             this._proxy.SubscribeOn<string, string, char>(
                 c => c.OnGameStarted,
@@ -97,7 +92,18 @@ namespace WordCollector2
                 {
                     this.CurrentGameId = gameId;
                     this.CurrentEnemyNick = enemyNick;
-                    this.ShowGameWindow(startChar);
+                    this.ShowGameWindow(startChar, false);
+                });
+
+            this._proxy.SubscribeOn<string, string>(
+                c => c.OnGameFinished,
+                (result, reason) =>
+                {
+                    MessageScene msg = new MessageScene();
+                    msg.SetText(result + ":\n" + reason);
+                    this._gui.Screen.Desktop.Children.Add(msg);
+                    msg.BringToFront();
+                    this._gameWindow.Close();
                 });
         }
 
@@ -137,23 +143,42 @@ namespace WordCollector2
             Task.Run(async () => await this._connection.Start());
         }
 
-        void ShowGameWindow(char startChar)
+        void ShowGameWindow(char startChar, bool canDoStep)
         {
             this._gameWindow?.Close();
             this._gui.Screen.Desktop.Children.Remove(this._gameWindow);
 
-            this._gameWindow = new GameScene(this.CurrentGameId, startChar);
+            this._gameWindow = new GameScene(this.CurrentGameId, startChar, canDoStep);
             this._gameWindow.AddMessage("Игра началась");
             this._gameWindow.AddMessage("Противник : " + this.CurrentEnemyNick);
             this._gameWindow.AddMessage("Случайная стартовая буква : [" + startChar + "]");
+            if (canDoStep)
+                this._gameWindow.AddMessage("Ваш ход");
+            else
+                this._gameWindow.AddMessage("Ход противника");
             this._inputService.KeyboardListener.KeyTyped += this._gameWindow.OnKeyTyped;
             this._gameWindow.BtnNextStep.Pressed += (control, args) =>
             {
-                this._gameWindow.AddMessage("Вы передали ход противнику");
-                this._proxy.Call(s => s.DoStep(
-                        this.CurrentGameId, 
-                        this._gameWindow.TbWord.Text[this._gameWindow.TbWord.Text.Length - 1]));
+                bool? result = 
+                    this._proxy.Call(s => s.DoStep(
+                            this.CurrentGameId, 
+                            this._gameWindow.GetLastChar()));
+
+                switch (result)
+                {
+                    case true:
+                        this._gameWindow.AddMessage("Вы передали ход противнику");
+                        this._gameWindow.BtnNextStep.Enabled = false;
+                        break;
+                    case false:
+                        this._gameWindow.RemoveLastChar();
+                        break;
+                    case null:
+                        this._gameWindow.AddMessage("Игра завершена!");
+                        break;
+                }
             };
+            this._gameWindow.OnNeedSetFocus = c => this._gui.Screen.FocusedControl = c;
             this._gui.Screen.Desktop.Children.Add(this._gameWindow);
             this._gameWindow.BringToFront();
         }
@@ -212,7 +237,7 @@ namespace WordCollector2
 
             this.CurrentGameId = gameData.Item1;
             this.CurrentEnemyNick = gameData.Item2;
-            this.ShowGameWindow(gameData.Item3);
+            this.ShowGameWindow(gameData.Item3, true);
         }
 
         /// <summary>

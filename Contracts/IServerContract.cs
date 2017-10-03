@@ -8,6 +8,6 @@ namespace Contracts
 
         Tuple<string, string, char> CreateNewGame();
 
-        void DoStep(string gameId, char lastSymbol);
+        bool? DoStep(string gameId, char lastSymbol);
     }
 }

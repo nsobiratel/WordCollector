@@ -4,6 +4,22 @@ namespace WordCollectorServer
 {
     class DictTreeNode
     {
+        public bool HasChild
+        {
+            get
+            { 
+                return this.ChildCount > 0;
+            }
+        }
+
+        public int ChildCount
+        {
+            get
+            {
+                return this.Childs.Count;
+            }
+        }
+
         public char Symbol { get; }
 
         int minWordLength { get; set; }

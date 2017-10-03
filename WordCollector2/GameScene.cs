@@ -4,6 +4,7 @@ using MonoGame.Extended.Input.InputListeners;
 using MonoGame.Extended.NuclexGui;
 using MonoGame.Extended.NuclexGui.Controls.Desktop;
 using MonoGame.Extended.NuclexGui.Controls;
+using System;
 
 namespace WordCollector2
 {
@@ -11,15 +12,20 @@ namespace WordCollector2
     {
         public GuiButtonControl BtnNextStep { get; }
 
-        public GuiInputControl TbWord { get; }
+        GuiInputControl TbWord { get; }
 
         GuiListControl ListMessages { get; }
 
         int _lastProcessedLength = 1;
-        bool _backspaceAlreadyApplied;
+        bool _backspaceAlreadyApplied = true;
+        char _lastChar;
 
-        public GameScene(string gameId, char startChar)
+        public Action<GuiControl> OnNeedSetFocus { get; set; }
+
+        public GameScene(string gameId, char startChar, bool canDoStep)
         {
+            this._lastChar = startChar;
+
             this.Bounds = new UniRectangle(
                 new UniScalar(0f, 0),
                 new UniScalar(0f, 0),
@@ -39,6 +45,7 @@ namespace WordCollector2
             {
                 Name = "tbWord",
                 Bounds = new UniRectangle(location, size),
+                Enabled = canDoStep
             };
             this.TbWord.Text += startChar;
 
@@ -53,7 +60,8 @@ namespace WordCollector2
             {
                 Name = "btnNextStep",
                 Bounds = new UniRectangle(location, size),
-                Text = "Сделать ход"
+                Text = "Сделать ход",
+                Enabled = canDoStep
             };
 
             size = new UniVector(
@@ -80,22 +88,65 @@ namespace WordCollector2
             this.ListMessages.Items.Add(msg);
         }
 
+        void AfterAddChar(char newChar, int newLength, bool enabled, bool bsApplied)
+        {
+            this._lastChar = newChar;
+            this._lastProcessedLength = newLength;
+            this._backspaceAlreadyApplied = bsApplied;
+            this.TbWord.CaretPosition = this._lastProcessedLength;
+            this.TbWord.Enabled = enabled;
+            //this.OnNeedSetFocus?.Invoke(this.BtnNextStep);
+        }
+
+        public void AddNewChar(char newChar)
+        {
+            this.AddMessage("Противник добавил букву [" + newChar + "]");
+            this.TbWord.Enabled = true;
+            this.BtnNextStep.Enabled = true;
+            this.TbWord.Text += newChar;
+            this.AfterAddChar(newChar, this.TbWord.Text.Length, true, true);
+            this.OnNeedSetFocus?.Invoke(this.TbWord);
+            this.AddMessage("Ваш ход");
+        }
+
+        public char GetLastChar()
+        {
+            return this._lastChar;
+        }
+
+        public void RemoveLastChar()
+        {
+            this.AddMessage("Мы не знаем слов с такой последовательностью букв :(");
+            this.AddMessage("Последняя (неподходящая) буква убрана, придумайте другую ;)");
+            this._ReplaceLastSymbol('\0');
+        }
+
         void _ReplaceLastSymbol(char newChar)
         {
-            if (!this.TbWord.Enabled
-                || newChar == '\0')
+            if (newChar == '\0')
             {
                 if (this.TbWord.Text.Length <= this._lastProcessedLength)
+                {
+                    this.AddMessage("один");
                     return;
+                }
 
                 if (this.TbWord.CaretPosition == this._lastProcessedLength)
                 {
+                    // ввелся один символ, который нужно удалить
+                    this.AddMessage("три");
                     this.TbWord.Text = this.TbWord.Text.Remove(this._lastProcessedLength - 1, 1);
-                    this.TbWord.CaretPosition = this.TbWord.Text.Length;
                 }
                 else
+                {
+                    // нужно удалить несоклько символов
+                    this.AddMessage("два");
                     this.TbWord.Text = this.TbWord.Text.Remove(this._lastProcessedLength);
-                
+                }
+
+                this.AfterAddChar(
+                    this.TbWord.Text[this._lastProcessedLength - 1], 
+                    this._lastProcessedLength - 1, false, false);
                 return;
             }
 
@@ -108,9 +159,7 @@ namespace WordCollector2
             else
                 builder.Append(newChar);
             this.TbWord.Text = builder.ToString();
-            this._backspaceAlreadyApplied = false;
-            this.TbWord.Enabled = false;
-            this._lastProcessedLength = this.TbWord.Text.Length;
+            this.AfterAddChar(newChar, this.TbWord.Text.Length, false, false);
         }
 
         public void OnKeyTyped(object sender, KeyboardEventArgs e)
@@ -125,9 +174,14 @@ namespace WordCollector2
                 case Keys.Delete:
                 case Keys.Back:
                     if (this._backspaceAlreadyApplied)
+                    {
+                        this.TbWord.Text += this._lastChar;
+                        this.TbWord.CaretPosition = this._lastProcessedLength;
                         return;
+                    }
                     this._lastProcessedLength--;
                     this._backspaceAlreadyApplied = true;
+                    this._lastChar = this.TbWord.Text[this._lastProcessedLength - 1];
                     this.TbWord.Enabled = true;
                     break;
                 case Keys.A:
