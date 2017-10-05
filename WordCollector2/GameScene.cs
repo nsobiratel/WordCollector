@@ -88,11 +88,14 @@ namespace WordCollector2
             this.ListMessages.Items.Add(msg);
         }
 
-        void AfterAddChar(char newChar, int newLength, bool enabled, bool bsApplied)
+        void AfterAddChar(int newLength, bool enabled, bool bsApplied)
         {
-            this._lastChar = newChar;
             this._lastProcessedLength = newLength;
             this._backspaceAlreadyApplied = bsApplied;
+            this._lastChar = 
+                newLength < this.TbWord.Text.Length 
+                ? '\0' 
+                : this.TbWord.Text[newLength - 1];
             this.TbWord.CaretPosition = this._lastProcessedLength;
             this.TbWord.Enabled = enabled;
             //this.OnNeedSetFocus?.Invoke(this.BtnNextStep);
@@ -104,7 +107,7 @@ namespace WordCollector2
             this.TbWord.Enabled = true;
             this.BtnNextStep.Enabled = true;
             this.TbWord.Text += newChar;
-            this.AfterAddChar(newChar, this.TbWord.Text.Length, true, true);
+            this.AfterAddChar(this.TbWord.Text.Length, true, true);
             this.OnNeedSetFocus?.Invoke(this.TbWord);
             this.AddMessage("Ваш ход");
         }
@@ -125,28 +128,28 @@ namespace WordCollector2
         {
             if (newChar == '\0')
             {
-                if (this.TbWord.Text.Length <= this._lastProcessedLength)
+                if (this._backspaceAlreadyApplied)
+                    return;
+                /*if (this.TbWord.Text.Length <= this._lastProcessedLength)
                 {
                     this.AddMessage("один");
                     return;
-                }
+                }*/
 
                 if (this.TbWord.CaretPosition == this._lastProcessedLength)
                 {
                     // ввелся один символ, который нужно удалить
-                    this.AddMessage("три");
+                    this.AddMessage("debug: три");
                     this.TbWord.Text = this.TbWord.Text.Remove(this._lastProcessedLength - 1, 1);
                 }
                 else
                 {
                     // нужно удалить несоклько символов
-                    this.AddMessage("два");
+                    this.AddMessage("debug: два");
                     this.TbWord.Text = this.TbWord.Text.Remove(this._lastProcessedLength);
                 }
 
-                this.AfterAddChar(
-                    this.TbWord.Text[this._lastProcessedLength - 1], 
-                    this._lastProcessedLength - 1, false, false);
+                this.AfterAddChar(this._lastProcessedLength - 1, true, true);
                 return;
             }
 
@@ -159,7 +162,7 @@ namespace WordCollector2
             else
                 builder.Append(newChar);
             this.TbWord.Text = builder.ToString();
-            this.AfterAddChar(newChar, this.TbWord.Text.Length, false, false);
+            this.AfterAddChar(this.TbWord.Text.Length, false, false);
         }
 
         public void OnKeyTyped(object sender, KeyboardEventArgs e)
