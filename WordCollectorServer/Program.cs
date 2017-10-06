@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Owin.Hosting;
+using Microsoft.AspNet.SignalR;
 
 namespace WordCollectorServer
 {

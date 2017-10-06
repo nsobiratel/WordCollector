@@ -23,16 +23,16 @@ namespace WordCollector2
             UniVector size = 
                 new UniVector(
                     new UniScalar(0.8f, 0), 
-                    new UniScalar(0.6f, 0));
+                    new UniScalar(0.55f, 0));
             UniVector location = 
                 new UniVector(
                     new UniScalar(0.1f, 0),
-                    new UniScalar(0.1f, 0));
+                    new UniScalar(0.15f, 0));
 
             this.LbText = new GuiLabelControl
             {
                 Name = "LbText",
-                Bounds = new UniRectangle(location, size),
+                Bounds = new UniRectangle(location, size)
             };
 
             size = new UniVector(

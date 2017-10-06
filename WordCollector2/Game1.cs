@@ -67,8 +67,8 @@ namespace WordCollector2
             this._camera = new Camera2D(viewportAdapter);*/
 
             this._connection = new HubConnection("http://localhost:8080/signalr");
-            this._connection.DeadlockErrorTimeout = TimeSpan.FromMinutes(10);
-            this._connection.TransportConnectTimeout = TimeSpan.FromMinutes(10);
+            this._connection.DeadlockErrorTimeout = TimeSpan.FromSeconds(15);
+            this._connection.TransportConnectTimeout = TimeSpan.FromSeconds(15);
 
             this._proxy = this._connection.CreateHubProxy("GlobalHub")
                 .AsHubProxy<IServerContract, IClientContract>();
@@ -103,7 +103,7 @@ namespace WordCollector2
                     msg.SetText(result + ":\n" + reason);
                     this._gui.Screen.Desktop.Children.Add(msg);
                     msg.BringToFront();
-                    this._gameWindow.Close();
+                    this._gameWindow?.Close();
                 });
         }
 
@@ -131,8 +131,29 @@ namespace WordCollector2
 
             this._menuWindow = new MenuScene();
             this._menuWindow.BtnStart.Pressed += _menuWindow_BtnStart_Pressed;
-            this._menuWindow.BtnSaveNick.Pressed += (sender, e) => 
+            this._menuWindow.BtnSaveNick.Pressed += (sender, e) =>
+            {
+                if (this._connection.State != ConnectionState.Connected)
+                {
+                    MessageScene msg = new MessageScene();
+                    msg.SetText("Отсутствует подключение к серверу");
+                    this._gui.Screen.Desktop.Children.Add(msg);
+                    msg.BringToFront();
+                    return;
+                }
+
+                if (!this._menuWindow.IsValidNick())
+                {
+                    MessageScene msg = new MessageScene();
+                    msg.SetText(
+                        "Имя игрока должно состоять из\nлатинских букв и цифр\nи иметь длину от 3 до 100 символов");
+                    this._gui.Screen.Desktop.Children.Add(msg);
+                    msg.BringToFront();
+                    return;
+                }
+
                 this._proxy.Call(s => s.Connect(this._menuWindow.TbNickName.Text));
+            };
             this._gui.Screen.Desktop.Children.Add(this._menuWindow);
             this._gui.Screen.FocusChanged += this._menuWindow.OnFocusChanged;
             this._menuWindow.BringToFront();
@@ -194,16 +215,6 @@ namespace WordCollector2
                 return;
             }
 
-            if (!this._menuWindow.IsValidNick())
-            {
-                MessageScene msg = new MessageScene();
-                msg.SetText(
-                    "Имя игрока должно состоять из латинских букв и цифр и иметь длину от 3 до 100 символов");
-                this._gui.Screen.Desktop.Children.Add(msg);
-                msg.BringToFront();
-                return;
-            }
-            
             this._gui.Screen.Desktop.Children.Remove(this._gameWindow);
 
             Tuple<string, string, char> gameData = this._proxy.Call(s => s.CreateNewGame());
@@ -214,12 +225,12 @@ namespace WordCollector2
                 if (string.IsNullOrWhiteSpace(gameData.Item2))
                 {
                     msg = new MessageScene();
-                    msg.SetText("На сервере нет пользователей, чтобы с вами сыграть");
+                    msg.SetText("На сервере нет пользователей,\nчтобы с вами сыграть");
                 }
                 else
                 {
                     msg = new MessageScene();
-                    msg.SetText("Не удалось создать игру с игроком [" + gameData.Item2 + "]");
+                    msg.SetText("Не удалось создать игру\nс игроком [" + gameData.Item2 + "]");
                 }
                 this._gui.Screen.Desktop.Children.Add(msg);
                 msg.BringToFront();
@@ -229,7 +240,7 @@ namespace WordCollector2
             if (string.IsNullOrWhiteSpace(gameData.Item2))
             {
                 MessageScene msg = new MessageScene();
-                msg.SetText("Не удалось получить имя противника в игре [" + gameData.Item1 + "]");
+                msg.SetText("Не удалось получить\nимя противника в игре [" + gameData.Item1 + "]");
                 this._gui.Screen.Desktop.Children.Add(msg);
                 msg.BringToFront();
                 return;
