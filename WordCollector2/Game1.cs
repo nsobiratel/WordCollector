@@ -319,6 +319,12 @@ namespace WordCollector2
             //this.spriteBatch.Dispose();
             base.UnloadContent();
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            this._connection?.Stop(TimeSpan.FromSeconds(10));
+            base.Dispose(disposing);
+        }
     }
 }
 
